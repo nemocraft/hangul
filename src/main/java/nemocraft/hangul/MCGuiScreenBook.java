@@ -52,14 +52,14 @@ public class MCGuiScreenBook extends GuiScreenBook
 
 		try
 		{
-			Field field = GuiScreenBook.class.getDeclaredField("field_146483_y");
+			Field field = GuiScreenBook.class.getDeclaredField("field_74177_s");
 			field.setAccessible(true);
 			this.bookPages = (NBTTagList) field.get(this);
 			field.setAccessible(false);
 
-			currPageField = GuiScreenBook.class.getDeclaredField("field_146484_x");
-			bookTitleField = GuiScreenBook.class.getDeclaredField("field_146482_z");
-			bookModifiedField = GuiScreenBook.class.getDeclaredField("field_146481_r");
+			currPageField = GuiScreenBook.class.getDeclaredField("field_74178_r");
+			bookTitleField = GuiScreenBook.class.getDeclaredField("field_74176_t");
+			bookModifiedField = GuiScreenBook.class.getDeclaredField("field_74166_d");
 		}
 		catch (Exception e)
 		{
@@ -77,7 +77,7 @@ public class MCGuiScreenBook extends GuiScreenBook
 
 				currPageField = GuiScreenBook.class.getDeclaredField("currPage");
 				bookTitleField = GuiScreenBook.class.getDeclaredField("bookTitle");
-				bookModifiedField = GuiScreenBook.class.getDeclaredField("field_146481_r");
+				bookModifiedField = GuiScreenBook.class.getDeclaredField("bookModified");
 			}
 			catch (Exception e)
 			{
@@ -157,14 +157,15 @@ public class MCGuiScreenBook extends GuiScreenBook
 
 	private String getText()
 	{
-		return this.bookPages != null && this.currPage >= 0 && this.currPage < this.bookPages.tagCount() ? this.bookPages.getStringTagAt(this.currPage) : "";
+		return this.bookPages != null && this.currPage >= 0 && this.currPage < this.bookPages.tagCount() ? this.bookPages.tagAt(this.currPage).toString() : "";
 	}
 
 	private void setText(String par1Str)
 	{
 		if (this.bookPages != null && this.currPage >= 0 && this.currPage < this.bookPages.tagCount())
 		{
-			this.bookPages.func_150304_a(this.currPage, new NBTTagString(par1Str));
+			NBTTagString nbttagstring = (NBTTagString) this.bookPages.tagAt(this.currPage);
+			nbttagstring.data = par1Str;
 
 			try
 			{
@@ -309,7 +310,7 @@ public class MCGuiScreenBook extends GuiScreenBook
 					{
 						current = current + im.getCommited();
 					}
-					int i = this.fontRendererObj.splitStringWidth(current + "" + EnumChatFormatting.BLACK + "_", 118);
+					int i = this.fontRenderer.splitStringWidth(current + "" + EnumChatFormatting.BLACK + "_", 118);
 
 					if (i <= 118 && current.length() < 256)
 					{
@@ -398,7 +399,7 @@ public class MCGuiScreenBook extends GuiScreenBook
 			byte b0 = 2;
 
 			String modeText = im.getMode() ? "\ud55c" : "\uc601";
-			this.fontRendererObj.drawString(modeText, k + 36, b0 + 16, 0);
+			this.fontRenderer.drawString(modeText, k + 36, b0 + 16, 0);
 		}
 	}
 }

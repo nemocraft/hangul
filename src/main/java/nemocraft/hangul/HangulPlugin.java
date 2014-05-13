@@ -21,12 +21,6 @@ public class HangulPlugin implements IFMLLoadingPlugin
 	}
 
 	@Override
-	public String getAccessTransformerClass()
-	{
-		return null;
-	}
-
-	@Override
 	public String getModContainerClass()
 	{
 		return null;

@@ -14,9 +14,13 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.IntInsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
+
+import cpw.mods.fml.common.asm.transformers.deobf.FMLDeobfuscatingRemapper;
 
 /**
  * 마인크래프트 기본 클래스 교체용 ASM transformer
@@ -32,7 +36,15 @@ public class HangulClassTransformer implements IClassTransformer
 		if (transformedName.equals("net.minecraft.client.gui.GuiChat") ||
 				transformedName.equals("net.minecraft.client.gui.GuiCommandBlock") ||
 				transformedName.equals("net.minecraft.client.gui.GuiRepair") ||
-				transformedName.equals("net.minecraft.client.gui.inventory.GuiContainerCreative"))
+				transformedName.equals("net.minecraft.client.gui.inventory.GuiContainerCreative") ||
+				// Applied Energistics
+				name.equals("appeng.me.gui.GuiPreformatter") ||
+				name.equals("appeng.me.gui.GuiTerminal") ||
+				// IC2 Nuclear Control
+				name.equals("shedar.mods.ic2.nuclearcontrol.gui.GuiAdvancedInfoPanel") ||
+				name.equals("shedar.mods.ic2.nuclearcontrol.gui.GuiIC2Thermo") ||
+				name.equals("shedar.mods.ic2.nuclearcontrol.gui.GuiInfoPanel") ||
+				name.equals("shedar.mods.ic2.nuclearcontrol.gui.GuiRemoteThermo"))
 		{
 			return patchGuiTextField(bytes);
 		}
@@ -55,10 +67,22 @@ public class HangulClassTransformer implements IClassTransformer
 			return patchNEISearchField(bytes);
 		}
 
-		// AE2 터미널의 MEGuiTextField를 대체 클래스로 변경
-		if (name.equals("appeng.client.gui.implementations.GuiMEMonitorable"))
+		// IC2 Nuclear Control 텍스트 카드의 GuiTextArea를 대체 클래스로 변경
+		if (name.equals("shedar.mods.ic2.nuclearcontrol.gui.GuiCardText"))
 		{
-			return patchAEMEGuiTextField(bytes);
+			return patchIC2NCGuiTextArea(bytes);
+		}
+
+		// AE 터미널의 아이템 목록에서 큰 폰트를 사용할 때 폰트 크기 증가
+		if (name.equals("appeng.common.AppEngRenderItem"))
+		{
+			return patchAERenderItem(bytes);
+		}
+
+		// AE 컨트롤러 GUI의 폰트 크기 증가
+		if (name.equals("appeng.me.gui.GuiController"))
+		{
+			return patchAEGuiController(bytes);
 		}
 
 		// VoxelMap Add Waypoint의 GuiTextField를 대체 클래스로 변경
@@ -66,6 +90,13 @@ public class HangulClassTransformer implements IClassTransformer
 				name.equals("com.thevoxelbox.voxelmap.util.GuiScreenAddWaypoint"))
 		{
 			return patchVMapGuiTextField(bytes);
+		}
+
+		// 표지판 내용을 확인할 때 allowedCharactes.indexOf를 사용할 경우 유니코드/한글 부분이 삭제되기에 isAllowedCharacter 메소드 호출로 변경
+		// Server Side
+		if (transformedName.equals("net.minecraft.network.NetServerHandler"))
+		{
+			return patchNetServerHandler(bytes);
 		}
 
 		return bytes;
@@ -90,7 +121,7 @@ public class HangulClassTransformer implements IClassTransformer
 				{
 					TypeInsnNode node = (TypeInsnNode)insn;
 
-					if (!node.desc.equals("net/minecraft/client/gui/GuiTextField"))
+					if (!FMLDeobfuscatingRemapper.INSTANCE.map(node.desc).equals("net/minecraft/client/gui/GuiTextField"))
 						continue;
 
 					m.instructions.set(node, new TypeInsnNode(node.getOpcode(), "nemocraft/hangul/MCGuiTextField"));
@@ -100,10 +131,12 @@ public class HangulClassTransformer implements IClassTransformer
 				{
 					MethodInsnNode node = (MethodInsnNode)insn;
 
-					if (!node.name.equals("<init>") || !node.owner.equals("net/minecraft/client/gui/GuiTextField"))
+					if (!node.name.equals("<init>") ||
+							!FMLDeobfuscatingRemapper.INSTANCE.map(node.owner).equals("net/minecraft/client/gui/GuiTextField"))
 						continue;
 
-					m.instructions.set(node, new MethodInsnNode(node.getOpcode(), "nemocraft/hangul/MCGuiTextField", node.name, node.desc));
+					m.instructions.set(node,
+							new MethodInsnNode(node.getOpcode(), "nemocraft/hangul/MCGuiTextField", node.name, node.desc));
 				}
 			}
 		}
@@ -120,7 +153,8 @@ public class HangulClassTransformer implements IClassTransformer
 		classReader.accept(classNode, 0);
 
 		ArrayList<String> targets = new ArrayList<String>();
-		targets.add("func_146100_a");
+		targets.add("displayGUIEditSign");
+		targets.add("func_71014_a");
 		targets.add("displayGUIBook");
 		targets.add("func_71048_c");
 
@@ -130,7 +164,9 @@ public class HangulClassTransformer implements IClassTransformer
 
 		for (MethodNode m: classNode.methods)
 		{
-			if (!targets.contains(m.name))
+			String deobf = FMLDeobfuscatingRemapper.INSTANCE.mapMethodName(classNode.name, m.name, m.desc);
+
+			if (!targets.contains(deobf))
 				continue;
 
 			Iterator<AbstractInsnNode> instructions = m.instructions.iterator();
@@ -143,20 +179,22 @@ public class HangulClassTransformer implements IClassTransformer
 				{
 					TypeInsnNode node = (TypeInsnNode)insn;
 
-					if (!replaces.containsKey(node.desc))
+					deobf = FMLDeobfuscatingRemapper.INSTANCE.map(node.desc);
+					if (!replaces.containsKey(deobf))
 						continue;
 
-					m.instructions.set(node, new TypeInsnNode(node.getOpcode(), replaces.get(node.desc)));
+					m.instructions.set(node, new TypeInsnNode(node.getOpcode(), replaces.get(deobf)));
 				}
 				// 객체 메소드 호출 부분 치환
 				else if (insn instanceof MethodInsnNode)
 				{
 					MethodInsnNode node = (MethodInsnNode)insn;
 
-					if (!replaces.containsKey(node.owner))
+					deobf = FMLDeobfuscatingRemapper.INSTANCE.map(node.owner);
+					if (!replaces.containsKey(deobf))
 						continue;
 
-					m.instructions.set(node, new MethodInsnNode(node.getOpcode(), replaces.get(node.owner), node.name, node.desc));
+					m.instructions.set(node, new MethodInsnNode(node.getOpcode(), replaces.get(deobf), node.name, node.desc));
 				}
 			}
 		}
@@ -174,8 +212,10 @@ public class HangulClassTransformer implements IClassTransformer
 
 		for (MethodNode m: classNode.methods)
 		{
-			if (!m.name.equals("getCharWidth") && !m.name.equals("func_78263_a") &&
-					!m.name.equals("renderUnicodeChar") && !m.name.equals("func_78277_a"))
+			String deobf = FMLDeobfuscatingRemapper.INSTANCE.mapMethodName(classNode.name, m.name, m.desc);
+
+			if (!deobf.equals("getCharWidth") && !deobf.equals("func_78263_a") &&
+					!deobf.equals("renderUnicodeChar") && !deobf.equals("func_78277_a"))
 				continue;
 
 			for (int index = 0; index < m.instructions.size(); index++)
@@ -190,7 +230,8 @@ public class HangulClassTransformer implements IClassTransformer
 					FieldInsnNode field = (FieldInsnNode)insn;
 					AbstractInsnNode node = m.instructions.get(index + 5);
 
-					if (!field.name.equals("glyphWidth") && !field.name.equals("field_78287_e"))
+					deobf = FMLDeobfuscatingRemapper.INSTANCE.mapFieldName(field.owner, field.name, field.desc);
+					if (!deobf.equals("glyphWidth") && !deobf.equals("field_78287_e"))
 						continue;
 
 					m.instructions.insertBefore(node, new IntInsnNode(Opcodes.BIPUSH, 15));
@@ -246,10 +287,12 @@ public class HangulClassTransformer implements IClassTransformer
 				{
 					MethodInsnNode node = (MethodInsnNode)insn;
 
-					if (!node.name.equals("<init>") || !node.owner.equals("codechicken/nei/SearchField"))
+					if (!node.name.equals("<init>") ||
+							!node.owner.equals("codechicken/nei/SearchField"))
 						continue;
 
-					m.instructions.set(node, new MethodInsnNode(node.getOpcode(), "nemocraft/hangul/NEISearchField", node.name, node.desc));
+					m.instructions.set(node,
+							new MethodInsnNode(node.getOpcode(), "nemocraft/hangul/NEISearchField", node.name, node.desc));
 				}
 			}
 		}
@@ -259,15 +302,17 @@ public class HangulClassTransformer implements IClassTransformer
 		return writer.toByteArray();
 	}
 
-	private byte[] patchAEMEGuiTextField(byte[] bytes)
+	private byte[] patchIC2NCGuiTextArea(byte[] bytes)
 	{
 		ClassNode classNode = new ClassNode();
 		ClassReader classReader = new ClassReader(bytes);
 		classReader.accept(classNode, 0);
 
-		// 클래스 내부의 메소드 확인
 		for (MethodNode m: classNode.methods)
 		{
+			if (!m.name.equals("initControls"))
+				continue;
+
 			Iterator<AbstractInsnNode> instructions = m.instructions.iterator();
 			while (instructions.hasNext())
 			{
@@ -278,20 +323,121 @@ public class HangulClassTransformer implements IClassTransformer
 				{
 					TypeInsnNode node = (TypeInsnNode)insn;
 
-					if (!node.desc.equals("appeng/client/gui/widgets/MEGuiTextField"))
+					if (!node.desc.equals("shedar/mods/ic2/nuclearcontrol/gui/GuiTextArea"))
 						continue;
 
-					m.instructions.set(node, new TypeInsnNode(node.getOpcode(), "nemocraft/hangul/AEMEGuiTextField"));
+					m.instructions.set(node, new TypeInsnNode(node.getOpcode(), "nemocraft/hangul/IC2NCGuiTextArea"));
 				}
 				// 객체 생성자 호출 부분 치환
 				else if (insn instanceof MethodInsnNode)
 				{
 					MethodInsnNode node = (MethodInsnNode)insn;
 
-					if (!node.name.equals("<init>") || !node.owner.equals("appeng/client/gui/widgets/MEGuiTextField"))
+					if (!node.name.equals("<init>") ||
+							!node.owner.equals("shedar/mods/ic2/nuclearcontrol/gui/GuiTextArea"))
 						continue;
 
-					m.instructions.set(node, new MethodInsnNode(node.getOpcode(), "nemocraft/hangul/AEMEGuiTextField", node.name, node.desc));
+					m.instructions.set(node,
+							new MethodInsnNode(node.getOpcode(), "nemocraft/hangul/IC2NCGuiTextArea", node.name, node.desc));
+				}
+			}
+		}
+
+		ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		classNode.accept(writer);
+		return writer.toByteArray();
+	}
+
+	private byte[] patchAERenderItem(byte[] bytes)
+	{
+		ClassNode classNode = new ClassNode();
+		ClassReader classReader = new ClassReader(bytes);
+		classReader.accept(classNode, 0);
+
+		for (MethodNode m: classNode.methods)
+		{
+			if (!m.name.equals("renderItemOverlayIntoGUI") && !m.name.equals("func_94148_a"))
+				continue;
+
+			for (int index = 0; index < m.instructions.size(); index++)
+			{
+				AbstractInsnNode insn = m.instructions.get(index);
+
+				// 0.85F를 1.0F로 변경
+				if (insn.getOpcode() == Opcodes.LDC)
+				{
+					LdcInsnNode node = (LdcInsnNode)insn;
+
+					if (!(node.cst instanceof Float) || ((Float)node.cst != 0.85F))
+						continue;
+
+					m.instructions.set(node, new LdcInsnNode(new Float(1.0F)));
+				}
+			}
+		}
+
+		ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		classNode.accept(writer);
+		return writer.toByteArray();
+	}
+
+	private byte[] patchAEGuiController(byte[] bytes)
+	{
+		ClassNode classNode = new ClassNode();
+		ClassReader classReader = new ClassReader(bytes);
+		classReader.accept(classNode, 0);
+
+		for (MethodNode m: classNode.methods)
+		{
+			if (!m.name.equals("drawGuiForegroundLayer"))
+				continue;
+
+			for (int index = 0; index < m.instructions.size(); index++)
+			{
+				AbstractInsnNode insn = m.instructions.get(index);
+
+				// glScaled의 0.5D, 0.9D를 1.0D로 변경
+				if (insn.getOpcode() == Opcodes.LDC &&
+						m.instructions.get(index + 1).getOpcode() == Opcodes.LDC &&
+						m.instructions.get(index + 2).getOpcode() == Opcodes.LDC)
+				{
+					LdcInsnNode node1 = (LdcInsnNode)insn;
+					LdcInsnNode node2 = (LdcInsnNode)m.instructions.get(index + 1);
+					LdcInsnNode node3 = (LdcInsnNode)m.instructions.get(index + 2);
+
+					if ((!(node1.cst instanceof Double) || (((Double)node1.cst != 0.9D) && ((Double)node1.cst != 0.5D))) ||
+							(!(node2.cst instanceof Double) || (((Double)node2.cst != 0.9D) && ((Double)node2.cst != 0.5D))) ||
+							(!(node3.cst instanceof Double) || (((Double)node3.cst != 0.9D) && ((Double)node3.cst != 0.5D))))
+						continue;
+
+					m.instructions.set(node1, new LdcInsnNode(new Double(1.0D)));
+					m.instructions.set(node2, new LdcInsnNode(new Double(1.0D)));
+					m.instructions.set(node3, new LdcInsnNode(new Double(1.0D)));
+				}
+
+				if (insn.getOpcode() == Opcodes.LDC &&
+						m.instructions.get(index + 1).getOpcode() == Opcodes.DMUL)
+				{
+					LdcInsnNode node = (LdcInsnNode)insn;
+
+					if (!(node.cst instanceof Double) || ((Double)node.cst != 2.0D))
+						continue;
+
+					m.instructions.set(node, new LdcInsnNode(new Double(1.0D)));
+				}
+
+				if (insn.getOpcode() == Opcodes.BIPUSH &&
+						m.instructions.get(index + 1).getOpcode() == Opcodes.IADD &&
+						m.instructions.get(index + 2).getOpcode() == Opcodes.ICONST_2 &&
+						m.instructions.get(index + 3).getOpcode() == Opcodes.IMUL)
+				{
+					IntInsnNode node = (IntInsnNode)insn;
+
+					if (node.operand != 6)
+						continue;
+
+					m.instructions.set(node, new IntInsnNode(Opcodes.BIPUSH, 4));
+					m.instructions.set(m.instructions.get(index + 2), new InsnNode(Opcodes.ICONST_1));
 				}
 			}
 		}
@@ -312,7 +458,9 @@ public class HangulClassTransformer implements IClassTransformer
 		// 클래스 내부의 메소드 확인
 		for (MethodNode m: classNode.methods)
 		{
-			if (!m.name.equals("initGui") && !m.name.equals("func_73866_w_"))
+			String deobf = FMLDeobfuscatingRemapper.INSTANCE.mapMethodName(classNode.name, m.name, m.desc);
+
+			if (!deobf.equals("initGui") && !deobf.equals("func_73866_w_"))
 				continue;
 
 			for (int index = 0; index < m.instructions.size(); index++)
@@ -324,7 +472,7 @@ public class HangulClassTransformer implements IClassTransformer
 				{
 					TypeInsnNode node = (TypeInsnNode)insn;
 
-					if (!node.desc.equals("net/minecraft/client/gui/GuiTextField"))
+					if (!FMLDeobfuscatingRemapper.INSTANCE.map(node.desc).equals("net/minecraft/client/gui/GuiTextField"))
 						continue;
 
 					newGuiTextField = node;
@@ -337,7 +485,8 @@ public class HangulClassTransformer implements IClassTransformer
 
 					MethodInsnNode node = (MethodInsnNode)insn;
 
-					if (!node.name.equals("<init>") || !node.owner.equals("net/minecraft/client/gui/GuiTextField"))
+					if (!node.name.equals("<init>") ||
+							!FMLDeobfuscatingRemapper.INSTANCE.map(node.owner).equals("net/minecraft/client/gui/GuiTextField"))
 						continue;
 
 					TypeInsnNode pair = newGuiTextField;
@@ -353,8 +502,89 @@ public class HangulClassTransformer implements IClassTransformer
 						continue;
 
 					m.instructions.set(pair, new TypeInsnNode(pair.getOpcode(), "nemocraft/hangul/MCGuiTextField"));
-					m.instructions.set(node, new MethodInsnNode(node.getOpcode(), "nemocraft/hangul/MCGuiTextField", node.name, node.desc));
+					m.instructions.set(node,
+							new MethodInsnNode(node.getOpcode(), "nemocraft/hangul/MCGuiTextField", node.name, node.desc));
 				}
+			}
+		}
+
+		ClassWriter writer = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+		classNode.accept(writer);
+		return writer.toByteArray();
+	}
+
+	private byte[] patchNetServerHandler(byte[] bytes)
+	{
+		ClassNode classNode = new ClassNode();
+		ClassReader classReader = new ClassReader(bytes);
+		classReader.accept(classNode, 0);
+
+		MethodNode handleChat = null;
+		MethodNode handleUpdateSign = null;
+		MethodInsnNode isAllowedCharacter = null;
+
+		for (MethodNode m: classNode.methods)
+		{
+			String deobf = FMLDeobfuscatingRemapper.INSTANCE.mapMethodName(classNode.name, m.name, m.desc);;
+
+			if (deobf.equals("handleChat") || deobf.equals("func_72481_a"))
+				handleChat = m;
+			if (deobf.equals("handleUpdateSign") || deobf.equals("func_72487_a"))
+				handleUpdateSign = m;
+
+			if ((handleChat != null) && (handleUpdateSign != null))
+				break;
+		}
+
+		if ((handleChat == null) || (handleUpdateSign == null))
+		{
+			System.out.println("[Error] handleChat or handleUpdateSign method not found");
+			return bytes;
+		}
+
+		// handleChat 메소드에서 isAllowedCharacter 의 난독화된 정보를 확인
+		for (int index = 0; index < handleChat.instructions.size(); index++)
+		{
+			if (handleChat.instructions.get(index).getOpcode() == Opcodes.INVOKESTATIC)
+			{
+				MethodInsnNode invoke = (MethodInsnNode)handleChat.instructions.get(index);
+				if (!invoke.desc.equals("(C)Z"))
+					continue;
+
+				String deobf = FMLDeobfuscatingRemapper.INSTANCE.mapMethodName(invoke.owner, invoke.name, invoke.desc);
+				if (!deobf.equals("isAllowedCharacter") && !deobf.equals("func_71566_a"))
+					continue;
+
+				isAllowedCharacter = invoke;
+				break;
+			}
+		}
+
+		if (isAllowedCharacter == null)
+		{
+			System.out.println("[Error] isAllowedCharacter instruction not found");
+			return bytes;
+		}
+
+		// handleUpdateSign 메소드에서 allowedCharacters.indexOf 호출 부분을 isAllowedCharacter 호출로 변경
+		for (int index = 0; index < handleUpdateSign.instructions.size(); index++)
+		{
+			if (handleUpdateSign.instructions.get(index).getOpcode() == Opcodes.GETSTATIC &&
+					handleUpdateSign.instructions.get(index + 7).getOpcode() == Opcodes.INVOKEVIRTUAL &&
+					handleUpdateSign.instructions.get(index + 8).getOpcode() == Opcodes.IFGE)
+			{
+				FieldInsnNode old_field = (FieldInsnNode)handleUpdateSign.instructions.get(index);
+				MethodInsnNode old_invoke = (MethodInsnNode)handleUpdateSign.instructions.get(index + 7);
+				JumpInsnNode old_jump = (JumpInsnNode)handleUpdateSign.instructions.get(index + 8);
+
+				String deobf = FMLDeobfuscatingRemapper.INSTANCE.mapFieldName(old_field.owner, old_field.name, old_field.desc);
+				if (!deobf.equals("allowedCharacters") && !deobf.equals("field_71568_a"))
+					continue;
+
+				handleUpdateSign.instructions.set(old_invoke,
+						new MethodInsnNode(Opcodes.INVOKESTATIC, isAllowedCharacter.owner, isAllowedCharacter.name, isAllowedCharacter.desc));
+				handleUpdateSign.instructions.set(old_jump, new JumpInsnNode(Opcodes.IFNE, old_jump.label));
+				handleUpdateSign.instructions.remove(old_field);
 			}
 		}
 

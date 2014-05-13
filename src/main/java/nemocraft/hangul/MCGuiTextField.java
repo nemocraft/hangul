@@ -72,7 +72,7 @@ public class MCGuiTextField extends GuiTextField
 
 		try
 		{
-			this.lineScrollOffsetField = GuiTextField.class.getDeclaredField("field_146225_q");
+			this.lineScrollOffsetField = GuiTextField.class.getDeclaredField("field_73816_n");
 		}
 		catch (Exception e)
 		{
@@ -190,13 +190,13 @@ public class MCGuiTextField extends GuiTextField
 				this.setSelectionPos(0);
 				return true;
 			case 3: // Ctrl + C
-				GuiScreen.setClipboardString(this.getSelectedText());
+				GuiScreen.setClipboardString(this.getSelectedtext());
 				return true;
 			case 22: // Ctrl + V
 				this.writeText(GuiScreen.getClipboardString());
 				return true;
 			case 24: // Ctrl + X
-				GuiScreen.setClipboardString(this.getSelectedText());
+				GuiScreen.setClipboardString(this.getSelectedtext());
 				this.writeText("");
 				return true;
 			default:

@@ -1,6 +1,6 @@
 package nemocraft.hangul;
 
-import static codechicken.lib.gui.GuiDraw.*;
+import static codechicken.core.gui.GuiDraw.*;
 
 import org.lwjgl.input.Keyboard;
 

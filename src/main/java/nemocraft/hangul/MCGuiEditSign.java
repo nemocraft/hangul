@@ -5,7 +5,6 @@ import java.lang.reflect.Field;
 import net.minecraft.block.Block;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiEditSign;
-import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntitySign;
 import net.minecraft.util.ChatAllowedCharacters;
 import net.minecraft.util.StatCollector;
@@ -45,7 +44,7 @@ public class MCGuiEditSign extends GuiEditSign
 
 		try
 		{
-			this.editLineField = GuiEditSign.class.getDeclaredField("field_146851_h");
+			this.editLineField = GuiEditSign.class.getDeclaredField("field_73984_m");
 		}
 		catch (Exception e)
 		{
@@ -177,7 +176,7 @@ public class MCGuiEditSign extends GuiEditSign
 
 		String modeText = im.getMode() ? "\ud55c" : "\uc601";
 		Block block = this.tileSign.getBlockType();
-		int modeYPos = (block == Blocks.standing_sign) ? 58 : 87;
-		this.fontRendererObj.drawString(modeText, this.width / 2 - 48, modeYPos, 0xFFFFFF);
+		int modeYPos = (block == Block.signPost) ? 58 : 87;
+		this.fontRenderer.drawString(modeText, this.width / 2 - 48, modeYPos, 0xFFFFFF);
 	}
 }

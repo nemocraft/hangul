@@ -11,7 +11,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:1.0-SNAPSHOT'
     }
 }
 
@@ -31,12 +31,12 @@ targetCompatibility = JavaVersion.VERSION_1_6
 
 apply plugin: 'forge'
 
-version = "1.7.2-1.4"
+version = "1.6.4-1.4"
 group= "nemocraft.hangul" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "nemocraftHangul"
 
 minecraft {
-    version = "1.7.2-10.12.1.1060"
+    version = "1.6.4-9.11.1.964"
     if (file('../run').exists()) {
         assetDir = "../run/assets"
     } else {
@@ -64,14 +64,20 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
-    compile "codechicken:CodeChickenLib:1.7.2-1.1.1.80:dev"
-    compile "codechicken:CodeChickenCore:1.7.2-1.0.0:dev"
-    compile "codechicken:NotEnoughItems:1.7.2-1.0.1:dev"
-
     if (file('../run').exists()) {
-        compile files ("../run/mods/appliedenergistics2-deobf-rv0-alpha-115.jar")
+        compile files (
+            "../run/mods/CodeChickenCore-dev 0.9.0.9.jar",
+            "../run/mods/CodeChickenLib-dev-1.6.4-1.0.0.62.jar",
+            "../run/mods/NotEnoughItems-dev 1.6.1.9.jar",
+            "../run/libs/IC2NuclearControl-1.6.2e-ic2-experimental.zip"
+        )
     } else {
-        compile files ("run/mods/appliedenergistics2-deobf-rv0-alpha-115.jar")
+        compile files (
+            "run/mods/CodeChickenCore-dev 0.9.0.9.jar",
+            "run/mods/CodeChickenLib-dev-1.6.4-1.0.0.62.jar",
+            "run/mods/NotEnoughItems-dev 1.6.1.9.jar",
+            "run/libs/IC2NuclearControl-1.6.2e-ic2-experimental.zip"
+        )
     }
 }
 

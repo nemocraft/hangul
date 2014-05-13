@@ -1,12 +1,13 @@
 package nemocraft.hangul;
 
-import org.apache.logging.log4j.Logger;
+import java.util.logging.Logger;
 
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
+import cpw.mods.fml.common.network.NetworkMod;
 
 /**
  * 마인크래프트 한글 입력을 지원하기 위한 포지용 모드
@@ -14,7 +15,8 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
  * @author nemocraft
  * @since 2013
  */
-@Mod(modid="nemocrafthangul", version="1.4", acceptableRemoteVersions="*")
+@Mod(modid="nemocrafthangul", version="1.4")
+@NetworkMod(clientSideRequired=false, serverSideRequired=false)
 public class HangulMod
 {
 	/** 로그 기록 */
