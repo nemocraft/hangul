@@ -1,0 +1,16 @@
+[
+{
+  "modid": "nemocrafthangul",
+  "name": "nemocraft Hangul",
+  "description": "nemocraft Hangul input method",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "http://nemocraft.wordpress.com",
+  "updateUrl": "",
+  "authorList": ["nemocraft"],
+  "credits": "nemocraft",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
