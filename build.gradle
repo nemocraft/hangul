@@ -67,14 +67,12 @@ dependencies {
     if (file('../run').exists()) {
         compile files (
             "../run/mods/CodeChickenCore-dev 0.9.0.9.jar",
-            "../run/mods/CodeChickenLib-dev-1.6.4-1.0.0.62.jar",
             "../run/mods/NotEnoughItems-dev 1.6.1.9.jar",
             "../run/libs/IC2NuclearControl-1.6.2e-ic2-experimental.zip"
         )
     } else {
         compile files (
             "run/mods/CodeChickenCore-dev 0.9.0.9.jar",
-            "run/mods/CodeChickenLib-dev-1.6.4-1.0.0.62.jar",
             "run/mods/NotEnoughItems-dev 1.6.1.9.jar",
             "run/libs/IC2NuclearControl-1.6.2e-ic2-experimental.zip"
         )
