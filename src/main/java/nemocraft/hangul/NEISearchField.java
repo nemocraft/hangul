@@ -4,8 +4,6 @@ import static codechicken.lib.gui.GuiDraw.*;
 
 import org.lwjgl.input.Keyboard;
 
-import codechicken.nei.ItemList;
-import codechicken.nei.NEIClientConfig;
 import codechicken.nei.SearchField;
 
 /**
@@ -32,16 +30,16 @@ public class NEISearchField extends SearchField
 
 		String modeText = im.getMode() ? "\ud55c" : "\uc601";
 		int modeXPos = x + 4;
-		int modeYPos = y + (height + 1) / 2 - 3;
+		int modeYPos = y + (h + 1) / 2 - 3;
 		int modeSize = fontRenderer.FONT_HEIGHT;
 
 		drawRect(modeXPos, modeYPos, modeSize, modeSize, 0xFF0000FF);
 		drawString(modeText, modeXPos + 1, modeYPos, 0xFFFFFFFF);
 
-		String drawtext = text() + preedit;
+		String drawtext = text();
 		int textWidth = getStringWidth(drawtext);
-		int textx = centered ? x+(width-textWidth-modeSize-2)/2 + modeSize + 2 : x + 4 + modeSize + 2;
-		int texty = y + (height + 1) / 2 - 3;
+		int textx = centered ? x+(w-textWidth-modeSize-2)/2 + modeSize + 2 : x + 4 + modeSize + 2;
+		int texty = y + (h + 1) / 2 - 3;
 
 		if(drawtext.length() > getMaxTextLength())
 		{
@@ -69,8 +67,7 @@ public class NEISearchField extends SearchField
 			{
 				preedit = im.getPreedit();
 				backdowntime = System.currentTimeMillis();
-				NEIClientConfig.setSearchExpression(text() + preedit);
-				ItemList.updateSearch();
+				onTextChange(text());
 				return true;
 			}
 			// im.delete()가 실패할 경우 상위 클래스 메소드 호출
@@ -79,7 +76,7 @@ public class NEISearchField extends SearchField
 		{
 			if (im.reset())
 			{
-				String input = text() + im.getCommited();
+				String input = super.text() + im.getCommited();
 				if(isValid(input))
 					super.setText(input);
 				preedit = "";
@@ -95,10 +92,9 @@ public class NEISearchField extends SearchField
 		{
 			boolean shift = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
 			if (im.input(keyChar, shift))
-				super.setText(text() + im.getCommited());
+				super.setText(super.text() + im.getCommited());
 			preedit = im.getPreedit();
-			NEIClientConfig.setSearchExpression(text() + preedit);
-			ItemList.updateSearch();
+			onTextChange(text());
 			return true;
 		}
 
@@ -117,11 +113,17 @@ public class NEISearchField extends SearchField
 	}
 
 	@Override
+	public String text()
+	{
+		return super.text() + preedit;
+	}
+
+	@Override
 	public void loseFocus()
 	{
 		if(im.reset())
 		{
-			String input = text() + im.getCommited();
+			String input = super.text() + im.getCommited();
 			if(isValid(input))
 				super.setText(input);
 			preedit = "";
@@ -135,7 +137,7 @@ public class NEISearchField extends SearchField
 		super.gainFocus();
 		if(im.reset())
 		{
-			String input = text() + im.getCommited();
+			String input = super.text() + im.getCommited();
 			if(isValid(input))
 				super.setText(input);
 			preedit = "";
@@ -144,6 +146,6 @@ public class NEISearchField extends SearchField
 
 	private int getMaxTextLength()
 	{
-		return width / 6 - 2;
+		return w / 6 - 2;
 	}
 }

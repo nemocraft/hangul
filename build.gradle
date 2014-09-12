@@ -31,16 +31,16 @@ targetCompatibility = JavaVersion.VERSION_1_6
 
 apply plugin: 'forge'
 
-version = "1.7.2-1.4"
+version = "1.7.2-1.5"
 group= "nemocraft.hangul" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "nemocraftHangul"
 
 minecraft {
-    version = "1.7.2-10.12.1.1060"
+    version = "1.7.2-10.12.2.1147"
     if (file('../run').exists()) {
-        assetDir = "../run/assets"
+        runDir = "../run"
     } else {
-        assetDir = "run/assets"
+        runDir = "run"
     }
 }
 
@@ -64,14 +64,14 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/artifact_dependencies_tutorial.html
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 
-    compile "codechicken:CodeChickenLib:1.7.2-1.1.1.80:dev"
-    compile "codechicken:CodeChickenCore:1.7.2-1.0.0:dev"
-    compile "codechicken:NotEnoughItems:1.7.2-1.0.1:dev"
+    compile "codechicken:CodeChickenLib:1.7.2-1.1.1.92:dev"
+    compile "codechicken:CodeChickenCore:1.7.2-1.0.2.10:dev"
+    compile "codechicken:NotEnoughItems:1.7.2-1.0.2.14:dev"
 
     if (file('../run').exists()) {
-        compile files ("../run/mods/appliedenergistics2-deobf-rv0-alpha-115.jar")
+        compile files ("../run/mods/appliedenergistics2-rv0-stable-9-dev.jar")
     } else {
-        compile files ("run/mods/appliedenergistics2-deobf-rv0-alpha-115.jar")
+        compile files ("run/mods/appliedenergistics2-rv0-stable-9-dev.jar")
     }
 }
 
