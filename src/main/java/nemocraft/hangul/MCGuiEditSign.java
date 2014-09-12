@@ -3,13 +3,10 @@ package nemocraft.hangul;
 import java.lang.reflect.Field;
 
 import net.minecraft.block.Block;
-import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.inventory.GuiEditSign;
 import net.minecraft.init.Blocks;
 import net.minecraft.tileentity.TileEntitySign;
 import net.minecraft.util.ChatAllowedCharacters;
-import net.minecraft.util.StatCollector;
-
 import org.lwjgl.input.Keyboard;
 
 import cpw.mods.fml.relauncher.Side;
@@ -86,10 +83,6 @@ public class MCGuiEditSign extends GuiEditSign
 	public void initGui()
 	{
 		super.initGui();
-
-		screenTitle = StatCollector.translateToLocal("sign.editTitle");
-		GuiButton doneBtn = (GuiButton) this.buttonList.get(0);
-		doneBtn.displayString = StatCollector.translateToLocal("gui.done");
 
 		if (im.reset())
 		{

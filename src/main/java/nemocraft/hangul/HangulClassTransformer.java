@@ -61,6 +61,12 @@ public class HangulClassTransformer implements IClassTransformer
 			return patchAEMEGuiTextField(bytes);
 		}
 
+		// Extra Cells 터미널의 GuiTextField를 대체 클래스로 변경
+		if (name.equals("extracells.gui.GuiFluidTerminal$1"))
+		{
+			return patchGuiTextField(bytes);
+		}
+
 		// VoxelMap Add Waypoint의 GuiTextField를 대체 클래스로 변경
 		if (name.equals("com.thevoxelbox.voxelmap.gui.GuiScreenAddWaypoint") ||
 				name.equals("com.thevoxelbox.voxelmap.util.GuiScreenAddWaypoint"))
@@ -76,6 +82,11 @@ public class HangulClassTransformer implements IClassTransformer
 		ClassNode classNode = new ClassNode();
 		ClassReader classReader = new ClassReader(bytes);
 		classReader.accept(classNode, 0);
+
+		if (classNode.superName.equals("net/minecraft/client/gui/GuiTextField"))
+		{
+			classNode.superName = "nemocraft/hangul/MCGuiTextField";
+		}
 
 		// 클래스 내부의 메소드 확인
 		for (MethodNode m: classNode.methods)
